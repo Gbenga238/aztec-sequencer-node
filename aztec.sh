@@ -8,7 +8,10 @@ PURPLE='\033[1;35m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-echo -e "${CYAN}${BOLD}Aztec Node Setup Script By Zun${RESET}"
+ENV_PATH="$HOME/.aztec/.env"
+
+curl -s https://raw.githubusercontent.com/zunxbt/logo/main/logo.sh | bash
+sleep 3
 
 echo -e "\n${CYAN}${BOLD}---- CHECKING DOCKER INSTALLATION ----${RESET}\n"
 if ! command -v docker &> /dev/null; then
@@ -54,6 +57,45 @@ AZTEC_PATH=$HOME/.aztec
 BIN_PATH=$AZTEC_PATH/bin
 mkdir -p $BIN_PATH
 
+# === Create or Verify .env File ===
+echo -e "\n${CYAN}${BOLD}---- VERIFYING ENVIRONMENT VARIABLES ----${RESET}"
+if [ ! -f "$ENV_PATH" ]; then
+  echo -e "${LIGHTBLUE}${BOLD}.env file not found. Creating new one at $ENV_PATH...${RESET}"
+  touch "$ENV_PATH"
+fi
+
+# Auto-detect and write IP if not already set
+if ! grep -q "^NODE_IP=" "$ENV_PATH" || [[ -z $(grep "^NODE_IP=" "$ENV_PATH" | cut -d '=' -f2) ]]; then
+  DETECTED_IP=$(curl -s https://api.ipify.org || curl -s http://checkip.amazonaws.com || curl -s https://ifconfig.me)
+  echo "NODE_IP=$DETECTED_IP" >> "$ENV_PATH"
+  echo -e "${GREEN}${BOLD}NODE_IP auto-detected and saved: $DETECTED_IP${RESET}"
+else
+  echo -e "${GREEN}${BOLD}NODE_IP already set in .env. Skipping...${RESET}"
+fi
+
+# Define required keys and prompts
+declare -A env_vars=(
+  ["L1_RPC_URL"]="Sepolia Ethereum RPC URL"
+  ["L1_CONSENSUS_URL"]="Sepolia BEACON (consensus) URL"
+  ["VALIDATOR_PRIVATE_KEY"]="Your EVM wallet private key (with 0x prefix)"
+  ["COINBASE_ADDRESS"]="Wallet address associated with the above private key"
+)
+
+# Loop through each required variable and verify existence
+for key in "${!env_vars[@]}"; do
+  current_val=$(grep "^$key=" "$ENV_PATH" | cut -d '=' -f2-)
+  if [[ -z "$current_val" ]]; then
+    echo -e "${LIGHTBLUE}${BOLD}${env_vars[$key]} not found in .env. Please enter it now:${RESET}"
+    read -rp "> " value
+    sed -i "/^$key=/d" "$ENV_PATH"
+    echo "$key=$value" >> "$ENV_PATH"
+    echo -e "${GREEN}${BOLD}$key has been set.${RESET}"
+  else
+    echo -e "${GREEN}${BOLD}$key already set in .env. Skipping...${RESET}"
+  fi
+  export $key=$(grep "^$key=" "$ENV_PATH" | cut -d '=' -f2-)
+done
+
 echo -e "\n${CYAN}${BOLD}---- INSTALLING AZTEC TOOLKIT ----${RESET}\n"
 
 if [ -n "$DOCKER_CMD" ]; then
@@ -63,19 +105,18 @@ fi
 curl -fsSL https://install.aztec.network | bash
 
 if ! command -v aztec >/dev/null 2>&1; then
-    echo -e "${LIGHTBLUE}${BOLD}Aztec CLI not found in PATH. Adding it for current session...${RESET}"
-    export PATH="$PATH:$HOME/.aztec/bin"
-    
-    if ! grep -Fxq 'export PATH=$PATH:$HOME/.aztec/bin' "$HOME/.bashrc"; then
-        echo 'export PATH=$PATH:$HOME/.aztec/bin' >> "$HOME/.bashrc"
-        echo -e "${GREEN}${BOLD}Added Aztec to PATH in .bashrc${RESET}"
-    fi
+  echo -e "${LIGHTBLUE}${BOLD}Aztec CLI not found in PATH. Adding it for current session...${RESET}"
+  export PATH="$PATH:$HOME/.aztec/bin"
+  if ! grep -Fxq 'export PATH=$PATH:$HOME/.aztec/bin' "$HOME/.bashrc"; then
+    echo 'export PATH=$PATH:$HOME/.aztec/bin' >> "$HOME/.bashrc"
+    echo -e "${GREEN}${BOLD}Added Aztec to PATH in .bashrc${RESET}"
+  fi
 fi
 
 if [ -f "$HOME/.bash_profile" ]; then
-    source "$HOME/.bash_profile"
+  source "$HOME/.bash_profile"
 elif [ -f "$HOME/.bashrc" ]; then
-    source "$HOME/.bashrc"
+  source "$HOME/.bashrc"
 fi
 
 export PATH="$PATH:$HOME/.aztec/bin"
@@ -89,66 +130,45 @@ echo -e "\n${CYAN}${BOLD}---- UPDATING AZTEC TO ALPHA-TESTNET ----${RESET}\n"
 aztec-up alpha-testnet
 
 echo -e "\n${CYAN}${BOLD}---- CONFIGURING NODE ----${RESET}\n"
-IP=$(curl -s https://api.ipify.org)
-if [ -z "$IP" ]; then
-    IP=$(curl -s http://checkip.amazonaws.com)
-fi
-if [ -z "$IP" ]; then
-    IP=$(curl -s https://ifconfig.me)
-fi
-if [ -z "$IP" ]; then
-    echo -e "${LIGHTBLUE}${BOLD}Could not determine IP address automatically.${RESET}"
-    read -p "Please enter your VPS/WSL IP address: " IP
-fi
 
-echo -e "${LIGHTBLUE}${BOLD}Visit ${PURPLE}https://dashboard.alchemy.com/apps${RESET}${LIGHTBLUE}${BOLD} or ${PURPLE}https://developer.metamask.io/register${RESET}${LIGHTBLUE}${BOLD} to create an account and get a Sepolia RPC URL.${RESET}"
-read -p "Enter Your Sepolia Ethereum RPC URL: " L1_RPC_URL
-
-echo -e "\n${LIGHTBLUE}${BOLD}Visit ${PURPLE}https://chainstack.com/global-nodes${RESET}${LIGHTBLUE}${BOLD} to create an account and get beacon RPC URL.${RESET}"
-read -p "Enter Your Sepolia Ethereum BEACON URL: " L1_CONSENSUS_URL
-
-echo -e "\n${LIGHTBLUE}${BOLD}Please create a new EVM wallet, fund it with Sepolia Faucet and then provide the private key.${RESET}"
-read -p "Enter your new evm wallet private key (with 0x prefix): " VALIDATOR_PRIVATE_KEY
-read -p "Enter the wallet address associated with the private key you just provided: " COINBASE_ADDRESS
-
-echo -e "\n${CYAN}${BOLD}---- CHECKING PORT AVAILABILITY ----${RESET}\n"
 if netstat -tuln | grep -q ":8080 "; then
-    echo -e "${LIGHTBLUE}${BOLD}Port 8080 is in use. Attempting to free it...${RESET}"
-    sudo fuser -k 8080/tcp
-    sleep 2
-    echo -e "${GREEN}${BOLD}Port 8080 has been freed successfully.${RESET}"
+  echo -e "${LIGHTBLUE}${BOLD}Port 8080 is in use. Attempting to free it...${RESET}"
+  sudo fuser -k 8080/tcp
+  sleep 2
+  echo -e "${GREEN}${BOLD}Port 8080 has been freed successfully.${RESET}"
 else
-    echo -e "${GREEN}${BOLD}Port 8080 is already free and available.${RESET}"
+  echo -e "${GREEN}${BOLD}Port 8080 is already free and available.${RESET}"
 fi
 
-echo -e "\n${CYAN}${BOLD}---- CREATING AZTEC START SCRIPT ----${RESET}\n"
-cat > $HOME/start_aztec_node.sh << EOL
+echo -e "\n${CYAN}${BOLD}---- CREATING SYSTEMD SERVICE ----${RESET}\n"
+
+cat > $HOME/.aztec/start_node.sh <<EOL
 #!/bin/bash
+source "$ENV_PATH"
 export PATH=\$PATH:\$HOME/.aztec/bin
 aztec start --node --archiver --sequencer \\
   --network alpha-testnet \\
   --port 8080 \\
-  --l1-rpc-urls $L1_RPC_URL \\
-  --l1-consensus-host-urls $L1_CONSENSUS_URL \\
-  --sequencer.validatorPrivateKey $VALIDATOR_PRIVATE_KEY \\
-  --sequencer.coinbase $COINBASE_ADDRESS \\
-  --p2p.p2pIp $IP
+  --l1-rpc-urls \$L1_RPC_URL \\
+  --l1-consensus-host-urls \$L1_CONSENSUS_URL \\
+  --sequencer.validatorPrivateKey \$VALIDATOR_PRIVATE_KEY \\
+  --sequencer.coinbase \$COINBASE_ADDRESS \\
+  --p2p.p2pIp \$NODE_IP
 EOL
 
-chmod +x $HOME/start_aztec_node.sh
+chmod +x $HOME/.aztec/start_node.sh
 
-echo -e "\n${CYAN}${BOLD}---- CREATING SYSTEMD SERVICE ----${RESET}\n"
-sudo bash -c "cat > /etc/systemd/system/aztec.service" << EOF
+sudo tee /etc/systemd/system/aztec.service > /dev/null <<EOF
 [Unit]
-Description=Aztec Node
+Description=Aztec Alpha Node
 After=network.target
 
 [Service]
-User=root
-ExecStart=$HOME/start_aztec_node.sh
+Type=simple
+User=$USER
+ExecStart=$HOME/.aztec/start_node.sh
 Restart=always
-RestartSec=5
-Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -159,4 +179,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable aztec
 sudo systemctl start aztec
 
-echo -e "\n${GREEN}${BOLD}Aztec node is now running as a system service (aztec.service). Use \`journalctl -u aztec -f\` to view logs.${RESET}\n"
+echo -e "${GREEN}${BOLD}Aztec node has been set up as a systemd service and is now running.${RESET}\n"

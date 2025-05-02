@@ -10,9 +10,6 @@ RESET='\033[0m'
 
 ENV_PATH="$HOME/.aztec/.env"
 
-# curl -s https://raw.githubusercontent.com/zunxbt/logo/main/logo.sh | bash
-# sleep 3
-
 echo -e "\n${CYAN}${BOLD}---- CHECKING DOCKER INSTALLATION ----${RESET}\n"
 if ! command -v docker &> /dev/null; then
   echo -e "${LIGHTBLUE}${BOLD}Docker not found. Installing Docker...${RESET}"
@@ -74,7 +71,7 @@ else
 fi
 
 # Define required keys and prompts
-declare -A env_vars=(
+declare -A env_vars=( 
   ["L1_RPC_URL"]="Sepolia Ethereum RPC URL"
   ["L1_CONSENSUS_URL"]="Sepolia BEACON (consensus) URL"
   ["VALIDATOR_PRIVATE_KEY"]="Your EVM wallet private key (with 0x prefix)"
@@ -177,7 +174,7 @@ Requires=docker.service
 [Service]
 Type=simple
 WorkingDirectory=/root
-ExecStart=/root/start_aztec_node.sh
+ExecStart=/root/.aztec/start_node.sh
 Restart=always
 RestartSec=5
 EnvironmentFile=/root/.aztec/.env
@@ -193,4 +190,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable aztec
 sudo systemctl start aztec
 
-echo -e "${GREEN}${BOLD}Aztec node has been set up as a systemd service and is now running.${RESET}\n"
+echo -e "${GREEN}${BOLD}Aztec Node has been successfully configured and started as a service!${RESET}"

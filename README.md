@@ -51,6 +51,8 @@ or
 ## ⚡Commands
 - You can use this command to check logs of your node
 ```
+journalctl -u aztec.service -f
+OR 
 sudo docker logs -f --tail 100 $(docker ps -q --filter ancestor=aztecprotocol/aztec:latest | head -n 1)
 ```
 - You can stop this node using this command

@@ -70,6 +70,10 @@ else
   echo -e "${GREEN}${BOLD}NODE_IP already set in .env. Skipping...${RESET}"
 fi
 
+# 🚨 ADD THIS LINE:
+NODE_IP=$(grep "^NODE_IP=" "$ENV_PATH" | cut -d '=' -f2-)
+export NODE_IP
+
 # Define required keys and prompts
 declare -A env_vars=( 
   ["L1_RPC_URL"]="Sepolia Ethereum RPC URL"

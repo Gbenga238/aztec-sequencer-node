@@ -165,7 +165,7 @@ EOL
 
 chmod +x $HOME/.aztec/start_node.sh
 
-# Systemd service definition
+# Update the systemd service definition with the full path to aztec
 cat > /etc/systemd/system/aztec.service << EOL
 [Unit]
 Description=Aztec Alpha Node
@@ -176,7 +176,7 @@ Requires=docker.service
 Type=simple
 WorkingDirectory=/root
 EnvironmentFile=/root/.aztec/.env
-ExecStart=/bin/bash -c "source /root/.aztec/.env && export PATH=\$PATH:/root/.aztec/bin && aztec start --node --archiver --sequencer --network alpha-testnet --port 8080 --l1-rpc-urls \$L1_RPC_URL --l1-consensus-host-urls \$L1_CONSENSUS_URL --sequencer.validatorPrivateKey \$VALIDATOR_PRIVATE_KEY --sequencer.coinbase \$COINBASE_ADDRESS --p2p.p2pIp \$NODE_IP"
+ExecStart=/bin/bash -c "source /root/.aztec/.env && /root/.aztec/bin/aztec start --node --archiver --sequencer --network alpha-testnet --port 8080 --l1-rpc-urls \$L1_RPC_URL --l1-consensus-host-urls \$L1_CONSENSUS_URL --sequencer.validatorPrivateKey \$VALIDATOR_PRIVATE_KEY --sequencer.coinbase \$COINBASE_ADDRESS --p2p.p2pIp \$NODE_IP"
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -185,6 +185,7 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOL
+
 
 
 # sudo systemctl daemon-reexec

@@ -10,8 +10,8 @@ RESET='\033[0m'
 
 ENV_PATH="$HOME/.aztec/.env"
 
-curl -s https://raw.githubusercontent.com/zunxbt/logo/main/logo.sh | bash
-sleep 3
+# curl -s https://raw.githubusercontent.com/zunxbt/logo/main/logo.sh | bash
+# sleep 3
 
 echo -e "\n${CYAN}${BOLD}---- CHECKING DOCKER INSTALLATION ----${RESET}\n"
 if ! command -v docker &> /dev/null; then

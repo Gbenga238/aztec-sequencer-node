@@ -165,6 +165,7 @@ EOL
 
 chmod +x $HOME/.aztec/start_node.sh
 
+# Update the systemd service definition with the full path to aztec
 cat > /etc/systemd/system/aztec.service << EOL
 [Unit]
 Description=Aztec Alpha Node
@@ -193,7 +194,6 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOL
-
 
 # sudo systemctl daemon-reexec
 sudo systemctl daemon-reload

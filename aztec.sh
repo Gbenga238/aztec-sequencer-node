@@ -175,8 +175,16 @@ Requires=docker.service
 Type=simple
 WorkingDirectory=/root
 EnvironmentFile=/root/.aztec/.env
-Environment="HOME=/root"
-ExecStart=/bin/bash -c "source /root/.aztec/.env && /root/.aztec/bin/aztec start --node --archiver --sequencer --network alpha-testnet --port 8080 --l1-rpc-urls \$L1_RPC_URL --l1-consensus-host-urls \$L1_CONSENSUS_URL --sequencer.validatorPrivateKey \$VALIDATOR_PRIVATE_KEY --sequencer.coinbase \$COINBASE_ADDRESS --p2p.p2pIp \$NODE_IP"
+Environment=PATH=/root/.aztec/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=HOME=/root
+ExecStart=/root/.aztec/bin/aztec start --node --archiver --sequencer \
+  --network alpha-testnet \
+  --port 8080 \
+  --l1-rpc-urls ${L1_RPC_URL} \
+  --l1-consensus-host-urls ${L1_CONSENSUS_URL} \
+  --sequencer.validatorPrivateKey ${VALIDATOR_PRIVATE_KEY} \
+  --sequencer.coinbase ${COINBASE_ADDRESS} \
+  --p2p.p2pIp ${NODE_IP}
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -184,8 +192,6 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-EOL
-
 
 
 

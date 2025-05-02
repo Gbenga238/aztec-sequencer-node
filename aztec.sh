@@ -165,8 +165,7 @@ EOL
 
 chmod +x $HOME/.aztec/start_node.sh
 
-# Update the systemd service definition with the full path to aztec
-cat > /etc/systemd/system/aztec.service << EOL
+cat > /etc/systemd/system/aztec.service <<EOL
 [Unit]
 Description=Aztec Alpha Node
 After=network.target docker.service

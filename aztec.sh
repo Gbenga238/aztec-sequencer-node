@@ -140,6 +140,16 @@ else
   echo -e "${GREEN}${BOLD}Port 8080 is already free and available.${RESET}"
 fi
 
+echo -e "\n${CYAN}${BOLD}---- STOPPING AND REMOVING EXISTING SYSTEMD SERVICE (if exists) ----${RESET}\n"
+if systemctl is-active --quiet aztec; then
+    echo -e "${LIGHTBLUE}${BOLD}Stopping existing Aztec service...${RESET}"
+    sudo systemctl stop aztec
+    sudo systemctl disable aztec
+    sudo systemctl daemon-reload
+    sudo rm /etc/systemd/system/aztec.service
+    echo -e "${GREEN}${BOLD}Existing service removed successfully.${RESET}"
+fi
+
 echo -e "\n${CYAN}${BOLD}---- CREATING SYSTEMD SERVICE ----${RESET}\n"
 
 cat > $HOME/.aztec/start_node.sh <<EOL
@@ -158,23 +168,27 @@ EOL
 
 chmod +x $HOME/.aztec/start_node.sh
 
-sudo tee /etc/systemd/system/aztec.service > /dev/null <<EOF
+cat > /etc/systemd/system/aztec.service << EOL
 [Unit]
 Description=Aztec Alpha Node
-After=network.target
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
-User=$USER
-ExecStart=$HOME/.aztec/start_node.sh
+WorkingDirectory=/root
+ExecStart=/root/start_aztec_node.sh
 Restart=always
-RestartSec=5s
+RestartSec=5
+EnvironmentFile=/root/.aztec/.env
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-EOF
+EOL
 
-sudo systemctl daemon-reexec
+# sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable aztec
 sudo systemctl start aztec

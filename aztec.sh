@@ -8,8 +8,7 @@ PURPLE='\033[1;35m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
-curl -s https://raw.githubusercontent.com/zunxbt/logo/main/logo.sh | bash
-sleep 3
+echo -e "${CYAN}${BOLD}Aztec Node Setup Script By Zun${RESET}"
 
 echo -e "\n${CYAN}${BOLD}---- CHECKING DOCKER INSTALLATION ----${RESET}\n"
 if ! command -v docker &> /dev/null; then
@@ -122,7 +121,7 @@ else
     echo -e "${GREEN}${BOLD}Port 8080 is already free and available.${RESET}"
 fi
 
-echo -e "\n${CYAN}${BOLD}---- STARTING AZTEC NODE ----${RESET}\n"
+echo -e "\n${CYAN}${BOLD}---- CREATING AZTEC START SCRIPT ----${RESET}\n"
 cat > $HOME/start_aztec_node.sh << EOL
 #!/bin/bash
 export PATH=\$PATH:\$HOME/.aztec/bin
@@ -137,6 +136,27 @@ aztec start --node --archiver --sequencer \\
 EOL
 
 chmod +x $HOME/start_aztec_node.sh
-screen -dmS aztec $HOME/start_aztec_node.sh
 
-echo -e "${GREEN}${BOLD}Aztec node started successfully in a screen session.${RESET}\n"
+echo -e "\n${CYAN}${BOLD}---- CREATING SYSTEMD SERVICE ----${RESET}\n"
+sudo bash -c "cat > /etc/systemd/system/aztec.service" << EOF
+[Unit]
+Description=Aztec Node
+After=network.target
+
+[Service]
+User=root
+ExecStart=$HOME/start_aztec_node.sh
+Restart=always
+RestartSec=5
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable aztec
+sudo systemctl start aztec
+
+echo -e "\n${GREEN}${BOLD}Aztec node is now running as a system service (aztec.service). Use \`journalctl -u aztec -f\` to view logs.${RESET}\n"

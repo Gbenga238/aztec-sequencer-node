@@ -1,4 +1,4 @@
-<h2 align=center>Aztec Sequencer Node Guide</h2>
+<h2 align=center>Aztec Sequencer Node Guide - Original work by Zunxbt</h2>
 
 Aztec is building a decentralized, privacy-focused network and the sequencer node is a key part of it. Running a sequencer helps produce and propose blocks using regular consumer hardware. This guide will walk you through setting one up on the testnet.
 
@@ -42,11 +42,11 @@ command -v curl >/dev/null 2>&1 || apt-get update && apt-get install -y curl; co
 - Execute either of the following commands to run your Aztec node
 
 ```
-[ -f "aztec.sh" ] && rm aztec.sh; curl -sSL -o aztec.sh https://raw.githubusercontent.com/zunxbt/aztec-sequencer-node/main/aztec.sh && chmod +x aztec.sh && ./aztec.sh
+[ -f "aztec.sh" ] && rm aztec.sh; curl -sSL -o aztec.sh https://raw.githubusercontent.com/gbenga238/aztec-sequencer-node/main/aztec.sh && chmod +x aztec.sh && ./aztec.sh
 ```
 or
 ```
-[ -f "aztec.sh" ] && rm aztec.sh; wget -q -O aztec.sh https://raw.githubusercontent.com/zunxbt/aztec-sequencer-node/main/aztec.sh && chmod +x aztec.sh && ./aztec.sh
+[ -f "aztec.sh" ] && rm aztec.sh; wget -q -O aztec.sh https://raw.githubusercontent.com/gbenga238/aztec-sequencer-node/main/aztec.sh && chmod +x aztec.sh && ./aztec.sh
 ```
 ## ⚡Commands
 - You can use this command to check logs of your node
